@@ -75,15 +75,15 @@ function App() {
   useEffect(() => watchAuth(setAuthUser), []);
   useEffect(() => { setEvFile(null); setEvNotes(""); }, [selected?.id]);
   useEffect(() => {
-    Promise.all([
-      fetchAlerts(),
-      fetchAgencies(),
-      api("/api/health"),
-    ]).then(([a, g, h]) => {
-      setAlerts(a); setAgencies(g);
-      setSummary(buildSummary(a));
-      setApiStatus(h.status === "online" ? "Online" : "Offline");
-    }).catch(() => setApiStatus("Offline"));
+    // Load each source independently: demo content must render even when
+    // the backend API is unreachable (e.g. static hosting with no /api).
+    fetchAlerts()
+      .then((a) => { setAlerts(a); setSummary(buildSummary(a)); })
+      .catch(() => {});
+    fetchAgencies().then(setAgencies).catch(() => {});
+    api("/api/health")
+      .then((h) => setApiStatus(h && h.status === "online" ? "Online" : "Offline"))
+      .catch(() => setApiStatus("Offline"));
   }, []);
 
   // Cloud-Function error codes that mean "backend not deployed yet" —
@@ -122,8 +122,12 @@ function App() {
       }
       return;
     }
-    const result = await legacyVerify(id);
-    if (result.alert) applyVerified(id);
+    try {
+      const result = await legacyVerify(id);
+      if (result.alert) applyVerified(id);
+    } catch {
+      setActionError("Verification needs the demo API — run the Express server or deploy the backend.");
+    }
   };
 
   const submitEvidence = async () => {

@@ -28,6 +28,37 @@ const LEGACY_STATUS = {
 
 export const MONITORED_ZONES = 24;
 
+/**
+ * Bundled demo records — mirrors server/db.json. Used whenever neither
+ * Firestore nor the Express demo API is reachable (e.g. static hosting
+ * without a backend), so the map pins, alert centre, agencies and stats
+ * always render instead of silently disappearing.
+ */
+const DEMO_ALERTS = [
+  { id: "EG-001", location: "Amansie South, Ashanti Region", risk: "High", change: "Vegetation loss / exposed soil", date: "2026-09-21", status: "Requires verification", lat: 6.321, lng: -1.736 },
+  { id: "EG-002", location: "Prestea-Huni Valley, Western Region", risk: "Medium", change: "Land-cover change", date: "2026-09-19", status: "Under review", lat: 5.535, lng: -2.105 },
+  { id: "EG-003", location: "Atiwa, Eastern Region", risk: "Low", change: "Possible vegetation disturbance", date: "2026-09-17", status: "Monitoring", lat: 6.221, lng: -0.566 },
+];
+
+const DEMO_AGENCIES = [
+  { name: "Forestry Commission / Forest Services Division", role: "Forest-reserve protection and monitoring" },
+  { name: "Minerals Commission", role: "Mining regulation and compliance" },
+  { name: "Environmental Protection Agency (EPA)", role: "Environmental regulation and compliance" },
+  { name: "Lands Commission", role: "Land information, surveying and mapping" },
+  { name: "NAIMOS", role: "Coordination of operations against illegal mining" },
+];
+
+/** GET a demo-API path. Returns null on any failure (offline, 404, bad JSON). */
+async function demoApi(path) {
+  try {
+    const res = await fetch(path);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 function toLegacyAlert(docId, a, d, areaName) {
   const date = String(d.observationDate || d.detectionDate || "").slice(0, 10);
   const base = areaName || d.locationName || "Unknown location";
@@ -73,8 +104,10 @@ export async function fetchAlerts() {
       console.warn("Firestore alerts unavailable, using demo API:", err);
     }
   }
-  const res = await fetch("/api/alerts").then((r) => r.json());
-  return res.alerts;
+  const res = await demoApi("/api/alerts");
+  if (res?.alerts?.length) return res.alerts;
+  console.info("Demo API unreachable — showing bundled demo alerts.");
+  return DEMO_ALERTS;
 }
 
 export async function fetchAgencies() {
@@ -91,8 +124,10 @@ export async function fetchAgencies() {
       console.warn("Firestore agencies unavailable, using demo API:", err);
     }
   }
-  const res = await fetch("/api/agencies").then((r) => r.json());
-  return res.agencies;
+  const res = await demoApi("/api/agencies");
+  if (res?.agencies?.length) return res.agencies;
+  console.info("Demo API unreachable — showing bundled demo agencies.");
+  return DEMO_AGENCIES;
 }
 
 export function buildSummary(alerts) {
