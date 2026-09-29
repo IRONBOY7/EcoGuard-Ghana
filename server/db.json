@@ -1,0 +1,14 @@
+{
+  "alerts": [
+    { "id": "EG-001", "location": "Amansie South, Ashanti Region", "risk": "High", "change": "Vegetation loss / exposed soil", "date": "2026-09-21", "status": "Requires verification", "lat": 6.321, "lng": -1.736 },
+    { "id": "EG-002", "location": "Prestea-Huni Valley, Western Region", "risk": "Medium", "change": "Land-cover change", "date": "2026-09-19", "status": "Under review", "lat": 5.535, "lng": -2.105 },
+    { "id": "EG-003", "location": "Atiwa, Eastern Region", "risk": "Low", "change": "Possible vegetation disturbance", "date": "2026-09-17", "status": "Monitoring", "lat": 6.221, "lng": -0.566 }
+  ],
+  "agencies": [
+    { "name": "Forestry Commission / Forest Services Division", "role": "Forest-reserve protection and monitoring" },
+    { "name": "Minerals Commission", "role": "Mining regulation and compliance" },
+    { "name": "Environmental Protection Agency (EPA)", "role": "Environmental regulation and compliance" },
+    { "name": "Lands Commission", "role": "Land information, surveying and mapping" },
+    { "name": "NAIMOS", "role": "Coordination of operations against illegal mining" }
+  ]
+}

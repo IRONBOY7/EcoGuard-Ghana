@@ -1,0 +1,28 @@
+/* EarthEngineModal — bring-your-own-account gate (dark-green glass card). */
+
+.eeOverlay{position:fixed;inset:0;background:rgba(4,12,8,.72);backdrop-filter:blur(4px);z-index:60;display:grid;place-items:center;padding:20px;animation:eeFade .18s ease-out}
+.eeCard{position:relative;width:min(94vw,520px);max-height:92vh;overflow:auto;background:linear-gradient(170deg,#123324,#0b1e14);border:1px solid rgba(180,220,190,.28);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:30px;color:#eaf4ec;animation:eePop .22s ease-out;text-align:left}
+.eeX{position:absolute;top:14px;right:14px;border:0;background:rgba(255,255,255,.08);color:#cfe0d4;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer}
+.eeX:hover{background:rgba(255,255,255,.16)}
+.eeHead{display:flex;gap:12px;align-items:center;margin-bottom:6px;padding-right:30px}
+.eeBadge{width:44px;height:44px;flex:none;border-radius:13px;background:rgba(98,226,139,.14);border:1px solid #37634c;display:grid;place-items:center;color:#62e28b}
+.eeCard h3{font:600 22px "Poppins",sans-serif;margin:0;color:#fff}
+.eeNote{font-size:13px;line-height:1.65;color:#b9cdc0;margin:10px 0 18px}
+.eeBox{background:rgba(98,226,139,.08);border:1px solid rgba(98,226,139,.3);border-radius:14px;padding:16px;margin-bottom:6px}
+.eeBoxHead{display:flex;align-items:center;gap:8px;font:600 13px "Poppins",sans-serif;color:#fff}
+.eeBox p{font-size:12px;line-height:1.6;color:#a9bfae;margin:8px 0 12px}
+.eeCheck{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:#cfe0d4;margin-top:12px;cursor:pointer;line-height:1.5}
+.eeCheck input{width:16px;height:16px;accent-color:#62e28b;margin-top:1px;flex:none;cursor:pointer}
+.eeField{display:block;font:600 12px "Inter",sans-serif;color:#dce8df;margin:14px 0 0}
+.eeField .opt{color:#7d917f;font-weight:400}
+.eeField input{display:block;width:100%;box-sizing:border-box;margin-top:7px;background:#08140f;border:1px solid #355a47;border-radius:9px;padding:11px 12px;color:#fff;font:500 13px "Inter",sans-serif}
+.eeField input:focus{outline:none;border-color:#62e28b}
+.eeField input::placeholder{color:#5f7368}
+.eeErr{color:#ff9d9d;font-size:12px;margin-top:10px}
+.eeBtns{display:flex;gap:10px;margin-top:16px}
+.eeBtns .primary{flex:1;justify-content:center;border:0;cursor:pointer;font:600 13px "Inter",sans-serif}
+.eeBtns .ghost{border:1px solid #355043;background:transparent;color:#dbe8df;border-radius:9px;padding:12px 17px;font:600 13px "Inter",sans-serif;cursor:pointer}
+.eeBtns .ghost:hover{background:rgba(255,255,255,.06)}
+@keyframes eeFade{from{opacity:0}}
+@keyframes eePop{from{opacity:0;transform:translateY(10px) scale(.98)}}
+@media(max-width:560px){.eeCard{padding:24px 18px}.eeBtns{flex-direction:column}}

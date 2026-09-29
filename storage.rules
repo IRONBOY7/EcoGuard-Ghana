@@ -1,0 +1,18 @@
+// EcoGuard Ghana Storage rules — least privilege.
+// Field-verification evidence: signed-in users may upload images (<10 MB)
+// under their alert's folder; the world may read them; nothing is deletable
+// from clients. Everything else is closed.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /verifications/{alertId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if false;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

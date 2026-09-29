@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// EcoGuard Ghana Firestore rules — least privilege.
+// Public demo/reference data is world-readable; all writes to operational
+// collections go through validated Cloud Functions (client writes denied).
+// User profiles are owner- (or admin-) only. Roles come from Auth custom
+// claims: "citizen" (default), "authority", "admin".
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function role() {
+      return request.auth.token.role;
+    }
+    function isAdmin() {
+      return signedIn() && role() == 'admin';
+    }
+    function isAuthority() {
+      return signedIn() && (role() == 'authority' || role() == 'admin');
+    }
+
+    // Reference data (seeded, demo:true allowed) — public read, no client writes.
+    match /authorities/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /monitoring_areas/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /satellite_observations/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Operational data — public read, writes via Cloud Functions only.
+    match /alerts/{id} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+    match /detected_changes/{id} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+    match /risk_assessments/{id} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+    match /field_verifications/{id} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // User profiles — owner read/write (role is immutable for non-admins).
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == 'citizen'
+        && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'createdAt']);
+      allow update: if signedIn()
+        && (request.auth.uid == uid || isAdmin())
+        && (isAdmin() || request.resource.data.role == resource.data.role);
+      allow delete: if false;
+    }
+  }
+}

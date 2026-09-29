@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment (.env files carry secrets — templates only: .env.example)
+.env
+.env.local
+
+# Firebase (never commit service-account keys or local emulator data)
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-key.json
+serviceAccount*.json
+service-account*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
