@@ -10,60 +10,79 @@
 
 ## 1. Current project — as built (active scope)
 
-Stack: React 18 + Vite dev server on `:5173` (proxies `/api` → `:4000`) +
-Express backend `server/index.js` on `:4000` with in-memory demo data.
-Run: `npm install`, then `npm run dev`, open http://localhost:5173.
-Mobile web app: PWA manifest + icons + production-only offline service
-worker (`public/`), installable via Add to Home Screen.
+Stack: React 18 + Vite on `:5173` (proxies `/api` → `:4000`) + Express
+`server/index.js` on `:4000` with JSON persistence (`server/db.json`).
+Run: `npm install`, then `npm run dev` (server + client together), open
+http://localhost:5173. Production: `npm run build` + `npm start`
+(Express serves `dist/` + API on `:4000`). Live public site:
+https://eco-guard-ghana.web.app (Firebase hosting, frontend only).
+Data: Firestore-first when configured (currently not) → Express demo API →
+bundled demo fallback in `src/api.js`, so map pins, alerts, agencies and
+stats render even on static hosting with no backend.
+Mobile web app: PWA manifest + icons + production-only service worker
+(`public/`), installable via Add to Home Screen.
 
 ```mermaid
 flowchart TB
-  Browser(["User browser<br/>http://localhost:5173"])
-  Vite["Vite :5173<br/>React 18 SPA — src/main.jsx + styles.css<br/>proxy: /api → localhost:4000"]
-  API["Express :4000 — server/index.js<br/>cors + express.json<br/>in-memory alerts[3] + agencies[5]"]
+  Browser(["User browser<br/>localhost:5173 (dev)<br/>eco-guard-ghana.web.app (live)"])
 
-  Browser -->|"GET /"| Vite
-  Vite -->|"fetch /api/* (proxied)"| API
-
-  subgraph Frontend["Frontend (src/main.jsx)"]
-    direction TB
-    Mount["mount → Promise.all:<br/>summary · alerts · agencies · health"]
-    State["state: summary · alerts · agencies<br/>selected alert · apiStatus"]
-    Hero["#home hero<br/>headline + CTAs<br/>API status pill (Online/Offline)"]
-    Stats["stats row<br/>24 zones · 3 active · 1 high-risk · 7 verified"]
-    How["#how-it-works<br/>8-step static pipeline"]
-    Dash["#monitoring dashboard<br/>Leaflet live map: Esri + NASA daily<br/>alert pins + detection metrics"]
-    AlertsUI["#alerts centre<br/>alert cards (EG-001..003)"]
-    AgenciesUI["#agencies grid (5 agencies)"]
-    Earth["earth section<br/>Earth Engine button → # (placeholder)"]
-    About["#about + footer<br/>Detect. Alert. Protect and Restore."]
-    Modal["detection modal<br/>map-pin click → details"]
+  subgraph Serve["Serving"]
+    direction LR
+    Vite["Vite :5173<br/>React 18 SPA — src/main.jsx + styles.css<br/>proxy: /api → localhost:4000"]
+    Expr["Express :4000 — server/index.js<br/>cors + express.json<br/>serves API + (prod) dist/"]
+    Host["Firebase Hosting (static)<br/>live site + mvp preview channel<br/>no /api backend"]
   end
 
-  Mount --> State
+  Browser -->|"GET / (dev)"| Vite
+  Browser -->|"GET / (public)"| Host
+  Vite -->|"fetch /api/* (proxied)"| Expr
+
+  subgraph Data["Data layer — src/api.js (independent loaders)"]
+    direction TB
+    FS["Firestore first (optional, unconfigured)<br/>alerts · detected_changes · authorities"]
+    EXAPI["Express demo API<br/>db.json: alerts[3] + agencies[5]"]
+    BUND["Bundled demo fallback<br/>DEMO_ALERTS EG-001..003<br/>DEMO_AGENCIES x5"]
+    State["UI state: alerts · agencies · summary<br/>selected · apiStatus · auth · ee"]
+    FS -.->|"if configured"| State
+    EXAPI -->|"if reachable"| State
+    BUND -->|"otherwise (e.g. hosting)"| State
+  end
+
+  Expr --> EXAPI
+  Host -.->|"GET /api/* → 404"| BUND
+
+  subgraph UI["Sections (src/main.jsx)"]
+    direction TB
+    Hero["#home hero + MonitoringCoverage radar<br/>API status pill (Online/Offline)"]
+    Stats["stats row<br/>24 zones · 3 active · 1 high-risk<br/>verified count (live)"]
+    How["#how-it-works<br/>8-step static pipeline"]
+    Dash["#monitoring dashboard<br/>Leaflet live map: Esri + NASA daily toggle<br/>risk pins + legend + detection side panel"]
+    BA["Before/After comparison<br/>EOX Sentinel-2 windows + published change figures"]
+    Alerts["#alerts centre<br/>cards EG-001..003: risk · location<br/>coords · date · status"]
+    Agencies["#agencies grid (5 agencies)"]
+    EE["Earth Engine connection<br/>modal: bring-your-own-account<br/>opens EE app via VITE_EE_APP_URL"]
+    Modal["detection modal (pin click)<br/>risk · date · lat/lng · verify"]
+    Auth["AuthModal (Firebase Auth, when configured)"]
+    About["#about + footer<br/>Detect. Alert. Protect and Restore."]
+  end
+
   State --> Hero
   State --> Stats
   State --> Dash
-  State --> AlertsUI
-  State --> AgenciesUI
-  Dash -->|"map-pin click<br/>(position % derived from lat/lng)"| Modal
+  State --> Alerts
+  State --> Agencies
+  Dash -->|"map-pin click"| Modal
 
-  subgraph Endpoints["Backend endpoints (server/index.js)"]
+  subgraph VerifyLoop["Verification loop"]
     direction TB
-    H["GET /api/health<br/>{status: online}"]
-    S["GET /api/monitoring/summary<br/>{monitoredZones: 24, activeAlerts: 3,<br/>highRisk: 1, verified: 7}"]
-    A["GET /api/alerts<br/>{demo: true, alerts: EG-001..003}"]
-    G["GET /api/agencies<br/>{5 agencies}"]
-    V["POST /api/alerts/:id/verify<br/>status → Field verification requested<br/>404 when id unknown"]
+    V["POST /api/alerts/:id/verify<br/>persists status to db.json<br/>404 when id unknown"]
+    FB["No backend (hosting/dev without server)<br/>button shows explanatory message"]
   end
 
-  Mount --> H
-  Mount --> S
-  Mount --> A
-  Mount --> G
-  AlertsUI -->|"Request verification"| V
+  Alerts -->|"Request verification"| V
   Modal -->|"Request field verification"| V
-  V -->|"returns updated alert<br/>UI swaps it into state"| AlertsUI
+  V -->|"returns updated alert<br/>UI swaps it into state"| Alerts
+  Alerts -.-> FB
 ```
 
 ## 2. Now vs Future — most appropriate at the moment
@@ -73,13 +92,14 @@ right is RESERVED for later — adopt a row only when its trigger is met.
 
 | Use now (this project) | Reserved for future | Full-arch ref |
 | ---------------------- | ------------------- | ------------- |
-| Demo alerts (EG-001..003) + verify flips status in memory | Persisted reports with Pending → Assigned → Completed lifecycle + citizen/collector/admin roles | §4 |
+| Demo alerts (EG-001..003); verify persists to `server/db.json` | Persisted reports with Pending → Assigned → Completed lifecycle + citizen/collector/admin roles | §4 |
 | Static 8-step pipeline section | Live satellite ingest + AI change detection + GIS layers | §3 |
-| Fake map pins + detection modal | Leaflet maps (OSM/Esri), risk filters, zone detail panels, Before/After comparison | §5 |
+| Leaflet live map (Esri + NASA daily toggle), risk pins + legend, detection modal, Before/After comparison | Risk filters, zone detail panels | §5 |
+| Bundled demo fallback — map, alerts, agencies, stats render on static hosting | — | §1 |
 | Agencies info grid (static) | Agency accounts + dispatch → accept → complete workflows | §6 |
-| Earth Engine button placeholder (`href="#"`) | Wire the public Earth Engine App URL in `src/main.jsx` once the EE project is registered and the app published | README note |
+| Earth Engine modal (bring-your-own-account); button opens modal or EE app URL | Register EE project + set `VITE_EE_APP_URL` once the EE app is published | README note |
 | API status pill (Online/Offline) | 4s live polling + toasts + notification center | §3 |
-| Summary stats (24 / 3 / 1 / 7 demo values) | Real aggregates from a database | §7 |
+| Summary stats (24 zones / 3 alerts / 1 high-risk + live verified count) | Real aggregates from a database | §7 |
 | Single public view, no login | Auth + Citizen / Collector / Gov-Admin portals | §3, §5, §6 |
 | — (not present) | EcoPoints, rewards, quizzes, communities | §5 |
 | — (not present) | Gemini AI chat / vision / voice, Firebase Auth + Firestore + Storage, voice reporting | §3 |
